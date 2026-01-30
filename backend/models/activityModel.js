@@ -7,6 +7,7 @@ const activitySchema = new mongoose.Schema({
   question: String,
   options: [String],
   correctAnswer: Number,
+  completed: { type: Boolean, default: false },
   createdAt: { type: Date, default: Date.now }
 });
 export default mongoose.model("Activity", activitySchema);

@@ -49,11 +49,14 @@ const addActivity = async () => {
       options,
       correctAnswer
     }
-   
   });
 
   alert("Activity added!");
+  setQuestion("");
+  setOptions(["", "", ""]);
+  setCorrectAnswer(0);
 };
+
   const endActivity = () => {
     socket.emit("end-activity", { code });
     alert('The activity is ended')
@@ -93,6 +96,8 @@ const addActivity = async () => {
       >
         Next Slide →
       </button>
+
+
 
       <div className="bg-white p-4 rounded shadow w-[400px] mt-6">
   <h3 className="font-bold mb-2">➕ Add Activity</h3>
@@ -161,6 +166,12 @@ const addActivity = async () => {
           ))}
         </div>
       )}
+<button
+  onClick={() => socket.emit("show-results", { code })}
+  className="px-6 py-3 bg-green-700 text-white rounded mb-4"
+>
+  📊 Show Results to Students
+</button>
 
     </div>
   );

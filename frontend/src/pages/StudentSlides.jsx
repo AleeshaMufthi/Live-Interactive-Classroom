@@ -9,13 +9,21 @@ export default function StudentSlides({ code }) {
   const [activity, setActivity] = useState(null);
   const [waiting, setWaiting] = useState(false);
   const [answer, setAnswer] = useState(null);
+  const [results, setResults] = useState(null);
 
 
   useEffect(() => {
 
     socket.emit("join-session", { code, role: "student" });
 
-    socket.on("slide-updated", setSlide);
+    // socket.on("slide-updated", setSlide);
+    socket.on("slide-updated", (slideIndex) => {
+  setSlide(slideIndex);
+  setWaiting(false);
+  setActivity(null);
+  setResults(null);
+});
+
 
     socket.on("activity-start", (activity) => {
       console.log(activity,'activity is added by teacher')
@@ -27,6 +35,20 @@ export default function StudentSlides({ code }) {
         setActivity(null);
         setWaiting(false);
     });
+
+   socket.on("activity-results", ({ activity, responses }) => {
+  setResults({ activity, responses });
+  setWaiting(false);
+  setActivity(null);
+});
+
+
+    socket.on("slide-updated", (slideIndex) => {
+  setSlide(slideIndex);
+  setActivity(null);
+  setWaiting(false);
+  setResults(null);
+});
 
     api.get(`/session/${code}`).then(res => {
       setSlides(res.data.slides || []);
@@ -76,14 +98,44 @@ if (activity && !waiting) {
     </div>
   );
 }
-if (waiting) {
+if (waiting && !activity) {
   return (
     <div className="h-screen flex justify-center items-center text-xl">
-      Waiting for teacher...
+      Waiting for teacher to show results...
     </div>
   );
 }
 
+if (results) {
+  const correct = results.activity.correctAnswer;
+
+  return (
+    <div className="h-screen flex flex-col justify-center items-center bg-green-100 p-6">
+      <h2 className="text-2xl font-bold mb-4">
+        ✅ Results
+      </h2>
+
+      <h3 className="text-lg mb-4">
+        Correct Answer: Option {correct + 1}
+      </h3>
+
+      {results.activity.options.map((opt, i) => (
+        <div
+          key={i}
+          className={`px-4 py-2 border rounded mb-2 w-64 text-center ${
+            i === correct ? "bg-green-500 text-white" : "bg-white"
+          }`}
+        >
+          {opt}
+        </div>
+      ))}
+
+      <p className="mt-4 text-gray-700">
+        Waiting for teacher to continue...
+      </p>
+    </div>
+  );
+}
 
 
   return (
@@ -96,8 +148,7 @@ if (waiting) {
       ) : (
         <h2>Waiting for teacher slides...</h2>
       )}
-
-      
+   
     </div>
   );
 }

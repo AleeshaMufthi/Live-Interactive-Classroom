@@ -15,38 +15,49 @@ export const socketHandler = (io) => {
 
 
   socket.on("change-slide", async ({ code, slideIndex }) => {
-  console.log("Slide:", slideIndex);
-  const activity = await Activity.findOne({
-    sessionCode: code,
-    slideIndex: Number(slideIndex)-1
-  });
-  console.log("Found activity:", activity);
-    if (activity) {
-    io.to(code).emit("activity-start", activity);
-  } else {
-    io.to(code).emit("slide-updated", slideIndex);
-  }
   await Session.updateOne(
     { code },
-    { 
-      currentSlide: slideIndex,
-      activeActivity: activity || null
-    }
+    { currentSlide: slideIndex }
   );
+  const activity = await Activity.findOne({
+    sessionCode: code,
+    slideIndex: slideIndex - 1
+  });
+
+  console.log(activity, 'activity founded')
+
+  if (activity) {
+    await Session.updateOne(
+      { code },
+      { activeActivity: activity }
+    );
+
+    io.to(code).emit("activity-start", activity);
+    return;
+  }
+  io.to(code).emit("slide-updated", slideIndex);
 });
 
-
 socket.on("submit-answer", async ({ code, answer }) => {
+
+  const session = await Session.findOne({ code });
+
   await Response.create({
     sessionCode: code,
+    activityId: session.activeActivity?._id,
     socketId: socket.id,
     answer,
     submittedAt: new Date()
   });
 
-  const responses = await Response.find({ sessionCode: code });
+  const responses = await Response.find({
+    sessionCode: code,
+    activityId: session.activeActivity?._id
+  });
+
   io.to(code).emit("response-update", responses);
 });
+
 
 
 socket.on("get-analytics", async ({ code }) => {
@@ -54,14 +65,19 @@ socket.on("get-analytics", async ({ code }) => {
   const session = await Session.findOne({ code });
   const activity = session.activeActivity;
 
-  const responses = await Response.find({ sessionCode: code });
+  if (!activity) return;
+
+  const responses = await Response.find({
+    sessionCode: code,
+    activityId: activity._id
+  });
 
   let analytics = {
     totalResponses: responses.length,
     optionCounts: {}
   };
 
-  if (activity?.type === "mcq") {
+  if (activity.type === "mcq") {
     activity.options.forEach((_, i) => {
       analytics.optionCounts[i] = 0;
     });
@@ -74,19 +90,76 @@ socket.on("get-analytics", async ({ code }) => {
   io.to(socket.id).emit("analytics-data", analytics);
 });
 
+socket.on("end-activity", async ({ code }) => {
 
-    socket.on("end-activity", async ({ code }) => {
-      const session = await Session.findOne({ code });
+  const session = await Session.findOne({ code });
+  const activity = session.activeActivity;
 
-      io.to(code).emit("activity-results", {
-        responses: session.responses,
-        activity: session.activeActivity
-      });
+  if (!session) return;
 
-      await Session.updateOne({ code }, { responses: [], activeActivity: null });
+  const responses = await Response.find({
+    sessionCode: code,
+    activityId: activity?._id
+  });
 
-       io.to(code).emit("activity-end");
-    });
+  // Show results first (optional if already shown)
+  io.to(code).emit("activity-results", {
+    activity,
+    responses
+  });
+
+  // Clear active activity
+  await Session.updateOne(
+    { code },
+    { activeActivity: null }
+  );
+
+  // 🔥 Send students back to teacher's current slide
+  io.to(code).emit("slide-updated", session.currentSlide);
+});
+
+
+
+//    socket.on("end-activity", async ({ code }) => {
+
+//   const session = await Session.findOne({ code });
+//   const activity = session.activeActivity;
+
+//   const responses = await Response.find({
+//     sessionCode: code,
+//     activityId: activity?._id
+//   });
+
+//   io.to(code).emit("activity-results", {
+//     activity,
+//     responses
+//   });
+
+//   await Session.updateOne(
+//     { code },
+//     { activeActivity: null }
+//   );
+// });
+
+socket.on("show-results", async ({ code }) => {
+
+  const session = await Session.findOne({ code });
+  const activity = session.activeActivity;
+
+  if (!activity) return;
+
+  const responses = await Response.find({
+    sessionCode: code,
+    activityId: activity._id
+  });
+
+  io.to(code).emit("activity-results", {
+    activity,
+    responses
+  });
+});
+
+
   });
 };
 

@@ -5,7 +5,6 @@ export const addActivity = async (req, res) => {
     console.log(req.body, 'request body')
   const { code, activity } = req.body;
 
-  console.log(activity.question, 'activitide question')
 
   if (!activity?.question || !activity?.type) {
     return res.status(400).json({ error: "Invalid activity" });
@@ -15,8 +14,6 @@ export const addActivity = async (req, res) => {
     sessionCode: code,
     ...activity
   });
-
-  console.log(saved, 'saved')
 
   res.json({ message: "Activity saved", activity: saved });
 };
