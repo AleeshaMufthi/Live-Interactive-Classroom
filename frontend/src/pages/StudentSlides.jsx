@@ -98,6 +98,7 @@ if (activity && !waiting) {
     </div>
   );
 }
+
 if (waiting && !activity) {
   return (
     <div className="h-screen flex justify-center items-center text-xl">
@@ -107,6 +108,28 @@ if (waiting && !activity) {
 }
 
 if (results) {
+  console.log(results, 'results')
+  const activity = results.activity;
+  console.log(activity,'activity')
+
+  // OPEN ENDED RESULT UI
+  if (activity.type === "open") {
+    return (
+      <div className="h-screen flex flex-col justify-center items-center bg-green-100 p-6">
+        <h2 className="text-2xl font-bold mb-4">Results</h2>
+
+        <h3 className="mb-2">Correct Answer:</h3>
+        <p className="bg-white px-4 py-2 rounded border">
+          {activity.correctAnswer}
+        </p>
+
+        <p className="mt-4 text-gray-700">
+          Waiting for teacher to continue...
+        </p>
+      </div>
+    );
+  }
+
   const correct = results.activity.correctAnswer;
 
   return (
@@ -136,7 +159,6 @@ if (results) {
     </div>
   );
 }
-
 
   return (
     <div className="h-screen flex justify-center items-center bg-gray-100">

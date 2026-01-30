@@ -17,4 +17,3 @@ export const addActivity = async (req, res) => {
 
   res.json({ message: "Activity saved", activity: saved });
 };
-

@@ -10,6 +10,9 @@ export default function TeacherSlides({ code }) {
   const [question, setQuestion] = useState("");
   const [options, setOptions] = useState(["", "", ""]);
   const [correctAnswer, setCorrectAnswer] = useState(0);
+  const [type, setType] = useState("mcq");
+  const [correctTextAnswer, setCorrectTextAnswer] = useState("");
+
 
   useEffect(() => {
     socket.emit("join-session", { code, role: "teacher" });
@@ -36,25 +39,26 @@ const nextSlide = () => {
    console.log(slide,'slideeeee', Number(slide), 'slide number')
 
 const addActivity = async () => {
-  if (!question || options.some(o => !o)) {
-    return alert("Fill all fields");
-  }
+  if (!question) return alert("Fill all fields");
 
   await api.post("/activity/add", {
     code,
     activity: {
       slideIndex: Number(slide),
-      type: "mcq",
+      type,
       question,
-      options,
-      correctAnswer
+      options: type === "mcq" ? options : [],
+      correctAnswer: type === "mcq" ? correctAnswer : correctTextAnswer
     }
   });
 
   alert("Activity added!");
+    // RESET FORM
   setQuestion("");
   setOptions(["", "", ""]);
   setCorrectAnswer(0);
+  setCorrectTextAnswer("");
+  setType("mcq");
 };
 
   const endActivity = () => {
@@ -102,32 +106,58 @@ const addActivity = async () => {
       <div className="bg-white p-4 rounded shadow w-[400px] mt-6">
   <h3 className="font-bold mb-2">➕ Add Activity</h3>
 
-  <input
+   <input
     placeholder="Question"
     className="border p-2 w-full mb-2"
+    value={question}
     onChange={(e) => setQuestion(e.target.value)}
   />
-  {options.map((opt, i) => (
-    <input
-      key={i}
-      placeholder={`Option ${i + 1}`}
-      className="border p-2 w-full mb-2"
-      onChange={(e) => {
-        const copy = [...options];
-        copy[i] = e.target.value;
-        setOptions(copy);
-      }}
-    />
-  ))}
 
-    <select
+  <select
   className="border p-2 w-full mb-3"
-  onChange={(e) => setCorrectAnswer(Number(e.target.value))}
+  value={type}
+  onChange={(e) => setType(e.target.value)}
 >
-  <option value={0}>Correct Answer: Option 1</option>
-  <option value={1}>Correct Answer: Option 2</option>
-  <option value={2}>Correct Answer: Option 3</option>
+  <option value="mcq">Multiple Choice</option>
+  <option value="open">Open Ended</option>
 </select>
+
+{type === "mcq" && options.map((opt, i) => (
+  <>
+  <input
+    key={i}
+    placeholder={`Option ${i + 1}`}
+    className="border p-2 w-full mb-2"
+    value={opt}
+    onChange={(e) => {
+      const copy = [...options];
+      copy[i] = e.target.value;
+      setOptions(copy);
+    }}
+  />
+</>
+))}
+
+{type === "open" && (
+  <input
+    placeholder="Correct Answer"
+    className="border p-2 w-full mb-2"
+    value={correctTextAnswer}
+    onChange={(e) => setCorrectTextAnswer(e.target.value)}
+  />
+)}
+
+  {type === "mcq" && (
+  <select
+    className="border p-2 w-full mb-3"
+    onChange={(e) => setCorrectAnswer(Number(e.target.value))}
+  >
+    <option value={0}>Correct Answer: Option 1</option>
+    <option value={1}>Correct Answer: Option 2</option>
+    <option value={2}>Correct Answer: Option 3</option>
+  </select>
+)}
+
 
   <button onClick={addActivity} className="bg-indigo-600 text-white px-4 py-2 rounded">
     Save Activity

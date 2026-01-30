@@ -5,6 +5,7 @@ const responseSchema = new mongoose.Schema({
   activityId: mongoose.Schema.Types.ObjectId,
   socketId: String,
   answer: mongoose.Schema.Types.Mixed,
+  isCorrect: Boolean,
   submittedAt: Date
 });
 export default mongoose.model("Response", responseSchema);

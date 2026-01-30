@@ -3,10 +3,10 @@ import mongoose from "mongoose";
 const activitySchema = new mongoose.Schema({
   sessionCode: String,
   slideIndex: Number,
-  type: String,
+  type: { type: String, enum: ["mcq", "open"] },
   question: String,
   options: [String],
-  correctAnswer: Number,
+  correctAnswer: mongoose.Schema.Types.Mixed,
   completed: { type: Boolean, default: false },
   createdAt: { type: Date, default: Date.now }
 });

@@ -41,23 +41,36 @@ export const socketHandler = (io) => {
 socket.on("submit-answer", async ({ code, answer }) => {
 
   const session = await Session.findOne({ code });
+  const activity = session.activeActivity;
+
+  let isCorrect = false;
+
+  if (activity.type === "mcq") {
+    isCorrect = Number(answer) === Number(activity.correctAnswer);
+  }
+
+  if (activity.type === "open") {
+    isCorrect =
+      answer?.trim().toLowerCase() ===
+      activity.correctAnswer?.trim().toLowerCase();
+  }
 
   await Response.create({
     sessionCode: code,
-    activityId: session.activeActivity?._id,
+    activityId: activity._id,
     socketId: socket.id,
     answer,
+    isCorrect,
     submittedAt: new Date()
   });
 
   const responses = await Response.find({
     sessionCode: code,
-    activityId: session.activeActivity?._id
+    activityId: activity._id
   });
 
   io.to(code).emit("response-update", responses);
 });
-
 
 
 socket.on("get-analytics", async ({ code }) => {
@@ -87,6 +100,10 @@ socket.on("get-analytics", async ({ code }) => {
     });
   }
 
+  if (activity.type === "open") {
+  analytics.correctCount = responses.filter(r => r.isCorrect).length;
+}
+
   io.to(socket.id).emit("analytics-data", analytics);
 });
 
@@ -101,45 +118,16 @@ socket.on("end-activity", async ({ code }) => {
     sessionCode: code,
     activityId: activity?._id
   });
-
-  // Show results first (optional if already shown)
   io.to(code).emit("activity-results", {
     activity,
     responses
   });
-
-  // Clear active activity
   await Session.updateOne(
     { code },
     { activeActivity: null }
   );
-
-  // 🔥 Send students back to teacher's current slide
   io.to(code).emit("slide-updated", session.currentSlide);
 });
-
-
-
-//    socket.on("end-activity", async ({ code }) => {
-
-//   const session = await Session.findOne({ code });
-//   const activity = session.activeActivity;
-
-//   const responses = await Response.find({
-//     sessionCode: code,
-//     activityId: activity?._id
-//   });
-
-//   io.to(code).emit("activity-results", {
-//     activity,
-//     responses
-//   });
-
-//   await Session.updateOne(
-//     { code },
-//     { activeActivity: null }
-//   );
-// });
 
 socket.on("show-results", async ({ code }) => {
 
@@ -158,7 +146,6 @@ socket.on("show-results", async ({ code }) => {
     responses
   });
 });
-
 
   });
 };
