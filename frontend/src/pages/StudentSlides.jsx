@@ -72,8 +72,8 @@ export default function StudentSlides({ code }) {
  if (activity && !waiting) {
     return (
     <>
-      
       <div className="h-screen flex flex-col justify-center items-center bg-gradient-to-b from-yellow-50 to-yellow-200 p-6">
+         <h2 className="mb-6 text-4xl font-semibold text-yellow-700">Complete the activity</h2>
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -213,6 +213,7 @@ export default function StudentSlides({ code }) {
     <div className="h-screen flex flex-col justify-center items-center bg-gray-50 p-6">
         
       {slides.length > 0 ? (
+        <>
         <motion.img
           key={slide}
           src={`http://localhost:5000${slides[slide]}`}
@@ -221,6 +222,8 @@ export default function StudentSlides({ code }) {
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.5 }}
         />
+       <h2 className="text-gray-800 mt-10 text-xl">Stay in <strong>sync with your teacher</strong>! Keep up with the slides, track your thoughts, and <strong>win</strong> at class activities.</h2>
+      </>
       ) : (
         <h2 className="text-xl text-gray-500">Waiting for teacher slides...</h2>
       )}
